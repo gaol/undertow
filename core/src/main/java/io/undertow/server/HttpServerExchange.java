@@ -220,6 +220,11 @@ public final class HttpServerExchange extends AbstractAttachable {
     private long maxEntitySize;
 
     /**
+     * The Thread going to execute the dispatchTask.
+     */
+    private Thread taskThread;
+
+    /**
      * When the call stack return this task will be executed by the executor specified in {@link #dispatchExecutor}.
      * If the executor is null then it will be executed by the XNIO worker.
      */
@@ -806,6 +811,7 @@ public final class HttpServerExchange extends AbstractAttachable {
         final Runnable runnable = new Runnable() {
             @Override
             public void run() {
+                taskThread = Thread.currentThread();
                 Connectors.executeRootHandler(handler, HttpServerExchange.this);
             }
         };
@@ -1649,6 +1655,9 @@ public final class HttpServerExchange extends AbstractAttachable {
         }
         if (anyAreClear(state, FLAG_RESPONSE_TERMINATED)) {
             closeAndFlushResponse();
+        }
+        if (taskThread != null && connection.getWorker().isShutdown()) {
+            taskThread.interrupt();
         }
         return this;
     }
