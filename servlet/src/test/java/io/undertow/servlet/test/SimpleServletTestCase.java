@@ -22,7 +22,9 @@ import java.io.IOException;
 
 import javax.servlet.ServletException;
 
+import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.ProxyPeerAddressHandler;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ServletContainer;
@@ -53,6 +55,7 @@ public class SimpleServletTestCase {
     public static void setup() throws ServletException {
 
         final PathHandler root = new PathHandler();
+
         final ServletContainer container = ServletContainer.Factory.newInstance();
 
         ServletInfo s = new ServletInfo("servlet", MessageServlet.class)
@@ -68,7 +71,9 @@ public class SimpleServletTestCase {
 
         DeploymentManager manager = container.addDeployment(builder);
         manager.deploy();
-        root.addPrefixPath(builder.getContextPath(), manager.start());
+        HttpHandler startHandler = manager.start();
+        startHandler = new ProxyPeerAddressHandler(startHandler);
+        root.addPrefixPath(builder.getContextPath(), startHandler);
 
         DefaultServer.setRootHandler(root);
     }
@@ -78,6 +83,10 @@ public class SimpleServletTestCase {
         TestHttpClient client = new TestHttpClient();
         try {
             HttpGet get = new HttpGet(DefaultServer.getDefaultServerURL() + "/servletContext/aa");
+            get.addHeader("X-Forwarded-For", "192.0.2.43");
+            get.addHeader("X-Forwarded-Proto", "http");
+            get.addHeader("X-Forwarded-Host", "192.0.2.10");
+            get.addHeader("X-Forwarded-Port", "7777");
             HttpResponse result = client.execute(get);
             Assert.assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
             final String response = HttpClientUtils.readResponse(result);

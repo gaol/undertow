@@ -44,6 +44,14 @@ public class MessageServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println("request.getServerName() = " + req.getServerName());
+        System.out.println("request.getServerPort() = " + req.getServerPort());
+        System.out.println("request.getLocalName() = " + req.getLocalName());
+        System.out.println("request.getLocalAddr() = " + req.getLocalAddr());
+        System.out.println("request.getLocalPort() =  " + req.getLocalPort());
+        System.out.println("request.getRemoteAddr() = " + req.getRemoteAddr());
+        System.out.println("request.getRemotePort() = " + req.getRemotePort());
+
         PrintWriter writer = resp.getWriter();
         writer.write(message);
         writer.close();
